@@ -41,6 +41,7 @@ def main():
 
     # ----- SIDE BAR -----
     with st.sidebar:
+        print(111)
         st.header('Filters')
         # Views filter
         view = st.radio("Select view:", ["monthly", "daily"], index=1, horizontal=True, key="sidebar")
