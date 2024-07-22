@@ -52,7 +52,7 @@ def main():
             st.markdown("""
                                     In order to better manage my daily income and expenditure(expense abc), I decided to develop a 
                                     personal financial management system. On the other hand, I could also apply what I 
-                                    have learned.
+                                    have learned. Keep study.
                                     """)
             image = Image.open('D:/pycharm/python_project/financeProject/utills/images/dog.png')
             #image = Image.open('static/images/logo.png')
