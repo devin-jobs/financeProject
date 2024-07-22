@@ -50,7 +50,7 @@ def main():
         with st.container():
             st.subheader('Project Overview')
             st.markdown("""
-                                    In order to better manage my daily income and expenditure(expense), I decided to develop a 
+                                    In order to better manage my daily income and expenditure(expense abc), I decided to develop a 
                                     personal financial management system. On the other hand, I could also apply what I 
                                     have learned.
                                     """)
