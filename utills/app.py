@@ -12,7 +12,7 @@ from data_validater import validate_and_save_data
 from filter import filter_data
 from data_import import import_data_from_file
 
-# 创建Redis连接
+# 创建Redis连接,redis.Redis()函数用于创建一个客户端实例
 r = redis.Redis(host='localhost', port=6379, db=0)
 
 # 定义固定的开始和结束日期
@@ -36,10 +36,12 @@ def main():
                     page_icon=':money_with_wings:',
                     layout='wide')
     # ----- TITLE & TABS -----
+    # 页面布局，一共由四个tab组成
     st.title('Personal Finance Dashboard')
     tab1, tab2, tab3, tab4 = st.tabs(['Home', 'Data', 'Dashboard', 'Documentation'])
 
     # ----- SIDE BAR -----
+    # 侧边栏用于选择按日筛选或者按月筛选
     with st.sidebar:
         st.header('Filters')
         # Views filter
@@ -66,17 +68,16 @@ def main():
         top_container = st.container()
         bottom_container = st.container()
 
-
-        #  ----- 顶部的容器 可编辑图表 验证数据并保存 -----
+        #  ----- 顶部的容器  文件导入 -----
         with top_container:
-            st.header("Data presentation")
-            table_records,df_income_expenses = show_edit_income_expense_table()
-            validate_and_save_data(table_records,df_income_expenses)
-
-        #  ----- 底部的容器  文件导入 -----
-        with bottom_container:
             st.header("批量导入文件")
             import_data_from_file()
+
+        #  ----- 底部的容器 可编辑图表 验证数据并保存 -----
+        with bottom_container:
+            st.header("Data presentation")
+            table_records, df_income_expenses = show_edit_income_expense_table()
+            validate_and_save_data(table_records, df_income_expenses)
 
     with tab3:
         with st.container():
