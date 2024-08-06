@@ -11,6 +11,7 @@ date_pattern = re.compile(r'^\d{4}-\d{2}-\d{2}$')
 # 创建正则表达式模式以匹配中文字符
 chinese_pattern = re.compile(r'^$|^\s*$|^[\u4e00-\u9fa5]+$', re.U)
 
+
 # 定义一个函数用来检查这列数据的合法性
 def is_valid_row(row):
     return (

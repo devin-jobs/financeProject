@@ -5,12 +5,14 @@ import pandas as pd
 from PIL import Image
 import streamlit as st
 import plotly.express as px
-import plotly.graph_objects as go
-import matplotlib.pyplot as plt
-from date_editor import show_edit_income_expense_table
-from data_validater import validate_and_save_data
 from filter import filter_data
+import matplotlib.pyplot as plt
+import plotly.graph_objects as go
 from data_import import import_data_from_file
+from data_validater import validate_and_save_data
+from date_editor import show_edit_income_expense_table
+
+is_saved = False
 
 # 创建Redis连接,redis.Redis()函数用于创建一个客户端实例
 r = redis.Redis(host='localhost', port=6379, db=0)
@@ -30,40 +32,53 @@ if 'records' not in st.session_state:
             {"收入/支出": "", "金额": 0, "明细备注": "", "日期": pd.NaT}  # 使用pd.NaT表示缺失日期
         ]
 
+
+def get_today_records(records):
+    today = datetime.datetime.now().date()
+    today_records = [record for record in records if pd.to_datetime(record['日期']).date() == today]
+    return today_records
+
 def main():
-    # ----- PAGE SETUP -----
+    # ----- 页面设置 -----
     st.set_page_config(page_title='Personal Finance Dashboard',
                     page_icon=':money_with_wings:',
                     layout='wide')
+
+    # 检查是否从 Redis 获取到了数据
+    if 'records' not in st.session_state or len(st.session_state.records) == 1:
+        st.warning("No data found in Redis. Initializing with default records.")  # 添加提示信息
+
     # ----- TITLE & TABS -----
     # 页面布局，一共由四个tab组成
     st.title('Personal Finance Dashboard')
-    tab1, tab2, tab3, tab4 = st.tabs(['Home', 'Data', 'Dashboard', 'Documentation'])
+    tab1, tab2, tab3, tab4 = st.tabs(['今天收支', '数据录入', 'Dashboard', 'Documentation'])
 
     # ----- SIDE BAR -----
     # 侧边栏用于选择按日筛选或者按月筛选
     with st.sidebar:
-        st.header('Filters')
-        # Views filter
-        view = st.radio("Select view:", ["monthly", "daily"], index=1, horizontal=True, key="sidebar")
+        st.title('个人主页')
 
-    # ----- HOME TAB -----
+
+    # ----- Today -----
     with tab1:
         with st.container():
-            st.subheader('Project Overview')
-            st.markdown("""
-                                    In order to better manage my daily income and expenditure(expense abc), I decided to develop a 
-                                    personal financial management system. On the other hand, I could also apply what I 
-                                    have learned. Keep study.
-                                    """)
+            # 展示今天的记录
+            today_records = get_today_records(st.session_state.records)
+            if today_records:
+                st.subheader("今天收支")
+                st.dataframe(today_records, use_container_width=True)
+            else:
+                st.warning("No records found for today.")
+
             image = Image.open('D:/pycharm/python_project/financeProject/utills/images/dog.png')
             #image = Image.open('static/images/logo.png')
             #image = Image.open('images/logo.png')
             st.image(image,caption='lucky dog')
 
-    with tab2:
-        st.title("Data")
 
+
+    with tab2:
+        #st.title("数据录入")
         #  ----- 创建上下的布局 -----
         top_container = st.container()
         bottom_container = st.container()
@@ -75,13 +90,17 @@ def main():
 
         #  ----- 底部的容器 可编辑图表 验证数据并保存 -----
         with bottom_container:
-            st.header("Data presentation")
+            st.header("添加数据")
             table_records, df_income_expenses = show_edit_income_expense_table()
+
             validate_and_save_data(table_records, df_income_expenses)
 
     with tab3:
         with st.container():
             st.subheader('Dashboard')
+            st.header('Filters')
+            # Views filter
+            view = st.radio("Select view:", ["monthly", "daily"], index=1, horizontal=True, key="sidebar")
 
             # 用户可以选择一个日期或月份
             if view == 'daily':
