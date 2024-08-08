@@ -5,7 +5,7 @@ import redis
 import datetime
 import streamlit as st
 import pandas as pd
-
+from data_validater import validate_and_save_data
 
 def show_edit_income_expense_table():
     """
@@ -44,10 +44,10 @@ def show_edit_income_expense_table():
         key="input_table",
     )
 
-    # 添加一个新的按钮
-    new_save_button = st.button("提交数据")  # 新增此行
-
+    # 添加一个新的按钮 第一个
+    new_save_button = st.button("提交数据")
     st.header("数据展示")
+
     # 使用 st.data_editor 创建第二个可编辑的表格
     table_record = st.data_editor(
         #df_income_expense含有旧的数据
@@ -62,7 +62,6 @@ def show_edit_income_expense_table():
         use_container_width=True,
         key="income_expense_table",
     )
-
     # 合并两个表格
     # 新增代码：合并表格前确保日期列的类型一致
     input_table['日期'] = pd.to_datetime(input_table['日期'], errors='coerce').dt.floor('D')
@@ -71,12 +70,18 @@ def show_edit_income_expense_table():
     # 新增代码：合并表格
     table_record = pd.concat([input_table, table_record], ignore_index=True)
 
+    # if new_save_button:
+    #     # 清除输入表格的内容
+    #     input_table.drop(input_table.index, inplace=True)
+
     # 清除输入表格的内容
     input_table.drop(input_table.index, inplace=True)
+    # 保存按钮
+    save_button = st.button('保存')
 
     # 返回合并后的表格
-    return table_record, df_income_expense
+    return table_record, df_income_expense,new_save_button, save_button
 
-
-
-
+def handle_submit_and_save_buttons(table_records, df_income_expenses,new_save_button, save_button):
+    if new_save_button or save_button:
+        validate_and_save_data(table_records, df_income_expenses,new_save_button, save_button)

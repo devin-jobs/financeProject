@@ -21,13 +21,12 @@ def is_valid_row(row):
         and (isinstance(row["日期"], str) and bool(date_pattern.match(row["日期"])) or row["日期"] is None)
     )
 
-def validate_and_save_data(records,df_income_expense):
+def validate_and_save_data(records,df_income_expense,new_save_button, save_button):
     from app import r
-    # 保存按钮
-    save_button = st.button('保存')
 
     # 当用户点击保存按钮时，验证数据并保存
-    if save_button and records is not None:
+    if save_button or new_save_button and records is not None:
+        # 执行相关操作
         # 验证收入/支出来源和明细备注，确保只包含中文字符和空格
         def is_valid_chinese_string(s):
             return s is None or isinstance(s, str) and bool(chinese_pattern.match(s))
