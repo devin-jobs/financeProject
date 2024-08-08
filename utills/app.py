@@ -1,5 +1,6 @@
 import json
 import redis
+import requests#requests库用于发送http请求
 import datetime
 import pandas as pd
 from PIL import Image
@@ -10,9 +11,8 @@ import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from data_import import import_data_from_file
 from data_validater import validate_and_save_data
-from date_editor import show_edit_income_expense_table
+from date_editor import show_edit_income_expense_table,handle_submit_and_save_buttons
 
-is_saved = False
 
 # 创建Redis连接,redis.Redis()函数用于创建一个客户端实例
 r = redis.Redis(host='localhost', port=6379, db=0)
@@ -32,6 +32,27 @@ if 'records' not in st.session_state:
             {"收入/支出": "", "金额": 0, "明细备注": "", "日期": pd.NaT}  # 使用pd.NaT表示缺失日期
         ]
 
+#登录表单
+def login():
+    #创建一个Streamlit表单，其key为‘login_form’ 在表单中添加两个文本输入框
+    form_key = st.form(key='login_form')
+    username = form_key.text_input('Username:')
+    password = form_key.text_input('Password:', type='password')
+
+    with form_key:
+        submit_button = st.form_submit_button(label='Login')
+
+        #发送post请求到本地服务器的 /token端点，传递用户名和密码作为表单数据
+        if submit_button:
+            response = requests.post('http://localhost:8000/token', data={'username': username, 'password': password})
+            data = response.json()
+
+            if 'access_token' in data:
+                st.session_state['token'] = data['access_token']
+                st.success('Logged in successfully.')
+                st.experimental_rerun()
+            else:
+                st.error(data['detail'])
 
 def get_today_records(records):
     today = datetime.datetime.now().date()
@@ -43,6 +64,30 @@ def main():
     st.set_page_config(page_title='Personal Finance Dashboard',
                     page_icon=':money_with_wings:',
                     layout='wide')
+
+    # ----- 登录界面 -----
+    # 判断用户是否已登录
+    if 'token' not in st.session_state:
+        with st.container():  # 创建一个容器，用于存放登录表单
+            login()
+    else:
+        # 用户已登录，隐藏登录表单
+        st.title('Welcome to the App')
+        # 使用 JWT 令牌来访问受保护的资源
+        headers = {'Authorization': f"Bearer {st.session_state['token']}"}
+        response = requests.get('http://localhost:8000/users/me', headers=headers)
+        if response.status_code == 200:
+            data = response.json()
+            st.write(f"Current User: {data['current_user']}")
+        elif response.status_code == 401:
+            # 如果令牌无效或过期，清除会话状态并重新显示登录界面
+            del st.session_state['token']
+            st.error("Session expired or invalid. Please log in again.")
+
+
+    # 显示标题和标签页
+    st.title('Personal Finance Dashboard')
+    tab1, tab2, tab3, tab4 = st.tabs(['今天收支', '数据录入', 'Dashboard', 'Documentation'])
 
     # 检查是否从 Redis 获取到了数据
     if 'records' not in st.session_state or len(st.session_state.records) == 1:
@@ -91,9 +136,11 @@ def main():
         #  ----- 底部的容器 可编辑图表 验证数据并保存 -----
         with bottom_container:
             st.header("添加数据")
-            table_records, df_income_expenses = show_edit_income_expense_table()
+            #show_edit_income_expense_table函数的两个按钮对应的两个表格 点击提交数据和保存都会触发相同的功能
+            #有点混乱 为了让两个按钮联合起来 handle_submit_and_save_buttons又包含了data_validater的检查函数（检查数据并保存）
+            table_records, df_income_expenses,new_save_button, save_button = show_edit_income_expense_table()
 
-            validate_and_save_data(table_records, df_income_expenses)
+            handle_submit_and_save_buttons( table_records, df_income_expenses,new_save_button, save_button)
 
     with tab3:
         with st.container():
